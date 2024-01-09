@@ -8,9 +8,16 @@ import javafx.stage.Stage;
  */
 public class App extends Application {
 
+  private Stage stage;
+
   @Override
   public void start (Stage stage) {
-    InitialScreen.setup(stage);
+    this.stage = stage;
+    InitialScreen initialScreen = new InitialScreen(
+        new SceneControls(this.stage::setScene, this.stage::setTitle),
+        new DirectoryPickup(this.stage)
+    );
+    initialScreen.render();
     stage.show();
   }
 

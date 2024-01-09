@@ -9,20 +9,18 @@ import javafx.stage.Stage;
 
 public class DirectoryPickup {
 
+  final private Stage stage;
   final private DirectoryChooser chooser;
-  final private String label;
-  final private Consumer<File> handler;
 
-  public DirectoryPickup (
+  public DirectoryPickup (Stage stage) {
+    this.stage = stage;
+    this.chooser = new DirectoryChooser();
+  }
+
+  public Button render (
       String label,
       Consumer<File> handler
   ) {
-    this.chooser = new DirectoryChooser();
-    this.label = label;
-    this.handler = handler;
-  }
-
-  public Button render (Stage stage) {
     Button button = new Button(label);
     button.setOnAction(e -> {
       File dir = chooser.showDialog(stage);
