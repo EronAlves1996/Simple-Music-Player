@@ -1,14 +1,15 @@
 package com.eronalves.simplemusicplayer;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
+import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.VBox;
+import javafx.util.Callback;
 
 public class MusicScreen {
 
@@ -25,18 +26,28 @@ public class MusicScreen {
 
   public void render () {
     File[] musicFiles = directory.listFiles(f -> f.getName().endsWith(".mp3"));
-    ListView<String> listView = new ListView<>();
+    ListView<File> listView = new ListView<>();
 
-    listView.setItems(
-        FXCollections.observableArrayList(
-            Arrays.stream(musicFiles)
-                .map(File::getName)
-                .collect(Collectors.toList())
-        )
-    );
+    listView.setItems(FXCollections.observableArrayList(musicFiles));
+    ObjectProperty<Callback<ListView<File>, ListCell<File>>> cellFactory =
+        listView.cellFactoryProperty();
 
-    sceneControls.setScene
-        .accept(new Scene(new FlowPane(Orientation.VERTICAL, listView)));
+    cellFactory.set(view -> new ListCell<>() {
+      @Override
+      protected void updateItem (
+          File item,
+          boolean empty
+      ) {
+        if (item != null) {
+          super.updateItem(item, empty);
+          setText(item.getName());
+        }
+      }
+    });
+    listView.setOrientation(Orientation.VERTICAL);
+    var vbox = new VBox(listView);
+
+    sceneControls.setScene.accept(new Scene(vbox, 640, 480));
   }
 
 }
