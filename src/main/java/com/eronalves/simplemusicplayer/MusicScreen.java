@@ -1,20 +1,27 @@
 package com.eronalves.simplemusicplayer;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.util.Callback;
 
 public class MusicScreen {
 
   private SceneControls sceneControls;
   private File directory;
+  private File selectedMusic;
+  private MediaPlayer mediaPlayer;
 
   public MusicScreen (
       SceneControls sceneControls,
@@ -26,8 +33,52 @@ public class MusicScreen {
 
   public void render () {
     File[] musicFiles = directory.listFiles(f -> f.getName().endsWith(".mp3"));
-    ListView<File> listView = new ListView<>();
 
+    var musicList = createMusicList(musicFiles);
+
+    musicList.getSelectionModel()
+        .selectedItemProperty()
+        .addListener(
+            (
+                ov,
+                o,
+                n
+            ) -> {
+              selectedMusic = n;
+            }
+        );
+
+    var musicButtons = createMusicControls( () -> {
+      if (isEmpty(selectedMusic)) return;
+
+      Media media = new Media(
+          Paths.get(selectedMusic.getAbsolutePath()).toUri().toString()
+      );
+
+      if (isEmpty(mediaPlayer) || !mediaPlayer.getMedia().equals(media)) {
+        mediaPlayer = new MediaPlayer(media);
+      }
+
+      mediaPlayer.play();
+    }, () -> {
+      if (isEmpty(mediaPlayer)) return;
+      mediaPlayer.pause();
+    }, () -> {
+      if (isEmpty(mediaPlayer)) return;
+      mediaPlayer.stop();
+    });
+
+    var vbox = new VBox(musicList, musicButtons);
+
+    sceneControls.setScene.accept(new Scene(vbox, 640, 480));
+  }
+
+  private boolean isEmpty (Object o) {
+    return o == null;
+  }
+
+  private ListView<File> createMusicList (File[] musicFiles) {
+    ListView<File> listView = new ListView<>();
     listView.setItems(FXCollections.observableArrayList(musicFiles));
     ObjectProperty<Callback<ListView<File>, ListCell<File>>> cellFactory =
         listView.cellFactoryProperty();
@@ -45,9 +96,21 @@ public class MusicScreen {
       }
     });
     listView.setOrientation(Orientation.VERTICAL);
-    var vbox = new VBox(listView);
+    return listView;
+  }
 
-    sceneControls.setScene.accept(new Scene(vbox, 640, 480));
+  private HBox createMusicControls (
+      Runnable onPlay,
+      Runnable onPause,
+      Runnable onStop
+  ) {
+    var playButton = new Button("PLAY");
+    playButton.setOnAction( (e) -> onPlay.run());
+    var pauseButton = new Button("PAUSE");
+    pauseButton.setOnAction(e -> onPause.run());
+    var stopButton = new Button("STOP");
+    stopButton.setOnAction(e -> onStop.run());
+    return new HBox(pauseButton, playButton, stopButton);
   }
 
 }
