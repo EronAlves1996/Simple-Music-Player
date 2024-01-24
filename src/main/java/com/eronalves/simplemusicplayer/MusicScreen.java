@@ -2,6 +2,8 @@ package com.eronalves.simplemusicplayer;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
@@ -22,6 +24,7 @@ public class MusicScreen {
   private File directory;
   private File selectedMusic;
   private MediaPlayer mediaPlayer;
+  private Timer poller;
 
   public MusicScreen (
       SceneControls sceneControls,
@@ -35,6 +38,7 @@ public class MusicScreen {
     File[] musicFiles = directory.listFiles(f -> f.getName().endsWith(".mp3"));
 
     var musicList = createMusicList(musicFiles);
+    var musicTrack = new MusicTrack(0.0);
 
     musicList.getSelectionModel()
         .selectedItemProperty()
@@ -55,8 +59,42 @@ public class MusicScreen {
           Paths.get(selectedMusic.getAbsolutePath()).toUri().toString()
       );
 
-      if (isEmpty(mediaPlayer) || !mediaPlayer.getMedia().equals(media)) {
+      if (
+        isEmpty(mediaPlayer)
+            || !mediaPlayer.getMedia().getSource().equals(media.getSource())
+      ) {
         mediaPlayer = new MediaPlayer(media);
+
+        mediaPlayer.setOnPlaying( () -> {
+          musicTrack
+              .updateTotalDuration(mediaPlayer.getTotalDuration().toMillis());
+          poller = new Timer();
+
+          poller.scheduleAtFixedRate(new TimerTask() {
+
+            @Override
+            public void run () {
+              musicTrack
+                  .updateActualMark(mediaPlayer.getCurrentTime().toMillis());
+            }
+          }, 1000L, 1000L);
+        });
+
+        mediaPlayer.setOnPaused( () -> {
+          if (poller == null) return;
+          poller.purge();
+        });
+
+        mediaPlayer.setOnStopped( () -> {
+          if (poller == null) return;
+          musicTrack.reset();
+          poller.purge();
+        });
+
+        mediaPlayer.setOnReady( () -> {
+          musicTrack
+              .updateTotalDuration(mediaPlayer.getTotalDuration().toMillis());
+        });
       }
 
       mediaPlayer.play();
@@ -68,7 +106,8 @@ public class MusicScreen {
       mediaPlayer.stop();
     });
 
-    var vbox = new VBox(musicList, musicButtons);
+    var vbox = new VBox(musicList, musicTrack.render(), musicButtons);
+    vbox.setFillWidth(true);
 
     sceneControls.setScene.accept(new Scene(vbox, 640, 480));
   }
@@ -110,6 +149,7 @@ public class MusicScreen {
     pauseButton.setOnAction(e -> onPause.run());
     var stopButton = new Button("STOP");
     stopButton.setOnAction(e -> onStop.run());
+
     return new HBox(pauseButton, playButton, stopButton);
   }
 
