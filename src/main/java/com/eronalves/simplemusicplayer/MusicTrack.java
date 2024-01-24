@@ -36,7 +36,7 @@ public class MusicTrack {
   }
 
   public void updateTotalDuration (double duration) {
-    totalMusicDuration.setText(translateDuration(totalDuration));
+    totalMusicDuration.setText(translateDuration(duration));
     this.totalDuration = duration;
   }
 

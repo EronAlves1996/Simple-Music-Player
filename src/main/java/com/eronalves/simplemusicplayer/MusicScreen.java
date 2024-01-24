@@ -66,9 +66,10 @@ public class MusicScreen {
         mediaPlayer = new MediaPlayer(media);
 
         mediaPlayer.setOnPlaying( () -> {
+          poller = new Timer();
+
           musicTrack
               .updateTotalDuration(mediaPlayer.getTotalDuration().toMillis());
-          poller = new Timer();
 
           poller.scheduleAtFixedRate(new TimerTask() {
 
@@ -82,18 +83,13 @@ public class MusicScreen {
 
         mediaPlayer.setOnPaused( () -> {
           if (poller == null) return;
-          poller.purge();
+          poller.cancel();
         });
 
         mediaPlayer.setOnStopped( () -> {
           if (poller == null) return;
           musicTrack.reset();
-          poller.purge();
-        });
-
-        mediaPlayer.setOnReady( () -> {
-          musicTrack
-              .updateTotalDuration(mediaPlayer.getTotalDuration().toMillis());
+          poller.cancel();
         });
       }
 
