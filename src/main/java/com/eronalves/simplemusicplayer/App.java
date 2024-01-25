@@ -1,6 +1,7 @@
 package com.eronalves.simplemusicplayer;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.stage.Stage;
 
 /**
@@ -8,17 +9,30 @@ import javafx.stage.Stage;
  */
 public class App extends Application {
 
-  private Stage stage;
+  private static Stage stage;
 
   @Override
   public void start (Stage stage) {
-    this.stage = stage;
-    InitialScreen initialScreen = new InitialScreen(
-        new SceneControls(this.stage::setScene, this.stage::setTitle),
-        new DirectoryPickup(this.stage)
-    );
+    App.stage = stage;
+    InitialScreen initialScreen = getInitialScreen();
     initialScreen.render();
     stage.show();
+    stage.setOnCloseRequest(e -> {
+      try {
+        this.stop();
+        Platform.exit();
+      } catch (Exception e1) {
+        // TODO Auto-generated catch block
+        e1.printStackTrace();
+      }
+    });
+  }
+
+  public static InitialScreen getInitialScreen () {
+    return new InitialScreen(
+        new SceneControls(App.stage::setScene, App.stage::setTitle),
+        new DirectoryPickup(App.stage)
+    );
   }
 
   public static void main (String[] args) {

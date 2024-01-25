@@ -40,6 +40,15 @@ public class MusicScreen {
     var musicList = createMusicList(musicFiles);
     var musicTrack = new MusicTrack(0.0);
 
+    var close = new Button("close");
+    close.setOnAction(e -> {
+      if (poller != null) poller.cancel();
+      if (mediaPlayer != null) mediaPlayer.dispose();
+      App.getInitialScreen().render();
+    });
+
+    var returnToInitialScreen = new HBox(close);
+
     musicList.getSelectionModel()
         .selectedItemProperty()
         .addListener(
@@ -77,6 +86,7 @@ public class MusicScreen {
             public void run () {
               musicTrack
                   .updateActualMark(mediaPlayer.getCurrentTime().toMillis());
+
             }
           }, 1000L, 1000L);
         });
@@ -102,7 +112,9 @@ public class MusicScreen {
       mediaPlayer.stop();
     });
 
-    var vbox = new VBox(musicList, musicTrack.render(), musicButtons);
+    var vbox = new VBox(
+        returnToInitialScreen, musicList, musicTrack.render(), musicButtons
+    );
     vbox.setFillWidth(true);
 
     sceneControls.setScene.accept(new Scene(vbox, 640, 480));
